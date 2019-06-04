@@ -56,7 +56,7 @@ body {
 }
 
 .logs {
-  width: 498px;
+  flex: 1;
   font-size: 10px;
 }
 
