@@ -1,6 +1,7 @@
 const httpProxy = require("http-proxy");
 const { app, BrowserWindow, ipcMain } = require("electron");
 const fs = require("fs");
+const path = require("path");
 
 function create_window() {
   let win = new BrowserWindow({
@@ -104,6 +105,7 @@ function create_window() {
     };
   }
 
+  const savePath = path.join(app.getAppPath());
   let servers;
   ipcMain.on("proxies-change", (e, a) => {
     if (servers) {
