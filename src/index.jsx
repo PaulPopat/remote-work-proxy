@@ -9,7 +9,7 @@ ipcRenderer.on("log", (e, a) => {
 const Logs = p => {
   const [logs, setLogs] = React.useState([]);
   logHandler = a => {
-    setLogs([...logs, a].slice(Math.max(-29 + logs.length, 0)));
+    setLogs([a, ...logs].slice(0, Math.min(30, logs.length + 1)));
   };
 
   return (

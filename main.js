@@ -105,7 +105,7 @@ function create_window() {
     };
   }
 
-  const savePath = path.join(app.getAppPath());
+  const savePath = path.join(app.getPath("userData"), "save.json");
   let servers;
   ipcMain.on("proxies-change", (e, a) => {
     if (servers) {
@@ -113,12 +113,12 @@ function create_window() {
     }
 
     servers = start_proxies(a);
-    fs.writeFileSync("save.json", JSON.stringify(a));
+    fs.writeFileSync(savePath, JSON.stringify(a));
   });
 
   ipcMain.on("ready", () => {
-    if (fs.existsSync("save.json")) {
-      const proxies = JSON.parse(fs.readFileSync("save.json"));
+    if (fs.existsSync(savePath)) {
+      const proxies = JSON.parse(fs.readFileSync(savePath));
       servers = start_proxies(proxies);
       win.webContents.send("load", proxies);
     }
