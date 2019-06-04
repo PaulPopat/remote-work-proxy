@@ -1,0 +1,75 @@
+.button {
+  display: inline-block;
+  background: #444;
+  padding: 4px 8px;
+  margin: 4px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.button:hover {
+  opacity: 0.8;
+}
+
+.input {
+  padding: 4px;
+}
+
+.input label {
+  display: inline-block;
+  width: 100px;
+}
+
+.input input {
+  border: none;
+  padding: 4px 8px;
+  background-color: #666;
+}
+
+.input input:hover {
+  outline: none;
+  border: 1px solid #999;
+  padding: 3px 7px;
+}
+
+.input input:active,
+.input input:focus {
+  outline: none;
+  border: 1px solid #777;
+  padding: 3px 7px;
+}
+
+body {
+  background-color: #222;
+  color: #eee;
+  font-family: "Open Sans", sans-serif;
+}
+
+.section {
+  margin: 4px;
+  background-color: #333;
+  padding: 4px;
+}
+
+.proxies {
+  width: 265px;
+}
+
+.logs {
+  width: 498px;
+  font-size: 10px;
+}
+
+.timestamp {
+  font-weight: bold;
+  margin-right: 4px;
+}
+
+.action {
+  margin-right: 2px;
+}
+
+.location {
+  font-style: italic;
+  color: #999;
+}
