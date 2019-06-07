@@ -2,7 +2,7 @@ const httpProxy = require("http-proxy");
 const { app, BrowserWindow, ipcMain } = require("electron");
 const fs = require("fs");
 const path = require("path");
-const { exec } = require("child_process");
+const sudo = require("sudo-prompt");
 
 function create_window() {
   let win = new BrowserWindow({
@@ -15,17 +15,23 @@ function create_window() {
 
   const execute = command => {
     return new Promise((res, rej) => {
-      exec(command, (err, stdout, stderr) => {
-        if (err) {
-          if (win) {
-            win.webContents.send("command-rejected");
+      sudo.exec(
+        command,
+        {
+          name: "remoteworkproxy"
+        },
+        (err, stdout, stderr) => {
+          if (err) {
+            if (win) {
+              win.webContents.send("command-rejected");
+            }
+            rej(err);
+            return;
           }
-          rej(err);
-          return;
-        }
 
-        res({ stdout, stderr });
-      });
+          res({ stdout, stderr });
+        }
+      );
     });
   };
 
