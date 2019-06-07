@@ -2,6 +2,7 @@ const httpProxy = require("http-proxy");
 const { app, BrowserWindow, ipcMain } = require("electron");
 const fs = require("fs");
 const path = require("path");
+const { exec } = require("child_process");
 
 function create_window() {
   let win = new BrowserWindow({
@@ -12,9 +13,50 @@ function create_window() {
     }
   });
 
+  const execute = command => {
+    return new Promise((res, rej) => {
+      exec(command, (err, stdout, stderr) => {
+        if (err) {
+          if (win) {
+            win.webContents.send("command-rejected");
+          }
+          rej(err);
+          return;
+        }
+
+        res({ stdout, stderr });
+      });
+    });
+  };
+
+  const originalEtcHosts = fs.readFileSync("/etc/hosts", "utf-8");
+  let previous = [];
+
+  /**
+   * @param {string[]} hosts
+   */
+  const setEtcHost = async hosts => {
+    if (hosts === previous) {
+      return;
+    }
+
+    previous = hosts;
+    let contents = originalEtcHosts;
+    for (const host of hosts) {
+      if (host === "localhost") {
+        continue;
+      }
+
+      contents += `\n127.0.0.1 ${host}`;
+    }
+
+    await execute(`echo "${contents}" > /etc/hosts`);
+  };
+
   win.loadFile("index.html");
 
-  win.on("closed", () => {
+  win.on("closed", async () => {
+    setEtcHost([]);
     win = null;
   });
 
@@ -47,13 +89,14 @@ function create_window() {
   }
 
   /**
-   * @param {string} host
-   * @param {string} port
+   * @param {string} outHost
+   * @param {number} inPort
+   * @param {number} outPort
    */
-  function proxy(host, inPort, outPort) {
+  function proxy(outHost, inPort, outPort) {
     const server = httpProxy
       .createProxyServer({
-        target: { host, port: outPort },
+        target: { host: outHost, port: outPort },
         ws: true
       })
       .on("start", r => {
@@ -91,10 +134,17 @@ function create_window() {
   }
 
   /**
-   * @param {{ host: string, inPort: number, outPort: number}[]} proxies
+   * @param {{ inHost: string, outHost: string, inPort: number, outPort: number}[]} proxies
    */
   function start_proxies(proxies) {
-    const servers = proxies.map(p => proxy(p.host, p.inPort, p.outPort));
+    const hosts = [];
+    const servers = [];
+    for (const p of proxies) {
+      hosts.push(p.inHost);
+      servers.push(proxy(p.outHost, p.inPort, p.outPort));
+    }
+
+    setEtcHost(hosts);
     return {
       stop: () => {
         for (const s of servers) {
@@ -118,7 +168,18 @@ function create_window() {
 
   ipcMain.on("ready", () => {
     if (fs.existsSync(savePath)) {
-      const proxies = JSON.parse(fs.readFileSync(savePath));
+      const proxies = JSON.parse(fs.readFileSync(savePath)).map(p => {
+        if (p.host) {
+          return {
+            inHost: "localhost",
+            outHost: p.host,
+            inPort: p.inPort,
+            outPort: p.outPort
+          };
+        }
+
+        return p;
+      });
       servers = start_proxies(proxies);
       win.webContents.send("load", proxies);
     }

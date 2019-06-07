@@ -2,6 +2,7 @@
   "name": "remote-work-proxy",
   "version": "1.0.2",
   "dependencies": {
+    "@types/react": "^16.8.19",
     "http-proxy": "^1.17.0"
   },
   "main": "main.js",

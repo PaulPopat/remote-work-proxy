@@ -6,6 +6,17 @@ ipcRenderer.on("log", (e, a) => {
   logHandler(a);
 });
 
+let alreadyFailed = false;
+ipcRenderer.on("command-rejected", () => {
+  if (alreadyFailed) {
+    return;
+  }
+
+  alert(
+    "A setting the etc hosts has failed. Please run as root to enable this feature."
+  );
+});
+
 const Logs = p => {
   const [logs, setLogs] = React.useState([]);
   logHandler = a => {
@@ -26,7 +37,7 @@ const Logs = p => {
 };
 
 /**
- * @param {{ host: string, inPort: number, outPort: number}[]} proxies
+ * @param {{ inHost: string, outHost: string, inPort: number, outPort: number}[]} proxies
  */
 function change(proxies) {
   ipcRenderer.send("proxies-change", proxies);
@@ -60,7 +71,7 @@ const Proxies = p => {
       {proxies.map(p => (
         <div key={p.id} className="section">
           <Input
-            value={p.host}
+            value={p.outHost}
             onChange={e =>
               setProxies(
                 proxies.map(o => {
@@ -70,7 +81,7 @@ const Proxies = p => {
 
                   return {
                     ...o,
-                    host: e
+                    outHost: e
                   };
                 })
               )
@@ -96,6 +107,25 @@ const Proxies = p => {
             }
           >
             Target Port:
+          </Input>
+          <Input
+            value={p.inHost}
+            onChange={e =>
+              setProxies(
+                proxies.map(o => {
+                  if (o !== p) {
+                    return o;
+                  }
+
+                  return {
+                    ...o,
+                    inHost: e
+                  };
+                })
+              )
+            }
+          >
+            Listen Host:
           </Input>
           <Input
             value={p.inPort}
@@ -124,7 +154,13 @@ const Proxies = p => {
           onClick={() =>
             setProxies([
               ...proxies,
-              { host: "", inPort: 0, outPort: 0, id: Math.random() }
+              {
+                inHost: "",
+                outHost: "",
+                inPort: 0,
+                outPort: 0,
+                id: Math.random()
+              }
             ])
           }
         >
