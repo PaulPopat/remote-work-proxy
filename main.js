@@ -35,7 +35,8 @@ function create_window() {
     });
   };
 
-  const originalEtcHosts = fs.readFileSync("/etc/hosts", "utf-8");
+  const etcHostsPath = process.platform === "win32" ? path.join("C:", "Windows", "System32", "drivers", "etc", "hosts") : path.join("etc", "hosts")
+  const originalEtcHosts = fs.readFileSync(etcHostsPath, "utf-8");
   let previous = [];
 
   /**
@@ -56,7 +57,7 @@ function create_window() {
       contents += `\n127.0.0.1 ${host}`;
     }
 
-    await execute(`echo "${contents}" > /etc/hosts`);
+    await execute(`echo "${contents}" > ${etcHostsPath}`);
   };
 
   win.loadFile("index.html");
