@@ -2,7 +2,9 @@ const httpProxy = require("http-proxy");
 const { app, BrowserWindow, ipcMain } = require("electron");
 const fs = require("fs");
 const path = require("path");
-const sudo = require("sudo-prompt");
+const setEtcHosts = require("./set-etc-hosts");
+
+let updatedEtcHosts = false;
 
 function create_window() {
   let win = new BrowserWindow({
@@ -13,57 +15,10 @@ function create_window() {
     }
   });
 
-  const execute = command => {
-    return new Promise((res, rej) => {
-      sudo.exec(
-        command,
-        {
-          name: "remoteworkproxy"
-        },
-        (err, stdout, stderr) => {
-          if (err) {
-            if (win) {
-              win.webContents.send("command-rejected");
-            }
-            rej(err);
-            return;
-          }
-
-          res({ stdout, stderr });
-        }
-      );
-    });
-  };
-
-  const etcHostsPath = process.platform === "win32" ? path.join("C:", "Windows", "System32", "drivers", "etc", "hosts") : path.join("etc", "hosts")
-  const originalEtcHosts = fs.readFileSync(etcHostsPath, "utf-8");
-  let previous = [];
-
-  /**
-   * @param {string[]} hosts
-   */
-  const setEtcHost = async hosts => {
-    if (hosts === previous) {
-      return;
-    }
-
-    previous = hosts;
-    let contents = originalEtcHosts;
-    for (const host of hosts) {
-      if (host === "localhost") {
-        continue;
-      }
-
-      contents += `\n127.0.0.1 ${host}`;
-    }
-
-    await execute(`echo "${contents}" > ${etcHostsPath}`);
-  };
-
+  win.setMenuBarVisibility(false);
   win.loadFile("index.html");
 
   win.on("closed", async () => {
-    setEtcHost([]);
     win = null;
   });
 
@@ -77,6 +32,18 @@ function create_window() {
     if (win === null) {
       create_window();
     }
+  });
+
+  app.on("before-quit", e => {
+    if (!updatedEtcHosts) {
+      return;
+    }
+
+    e.preventDefault();
+    setEtcHosts([]).then(() => {
+      updatedEtcHosts = false;
+      app.quit();
+    });
   });
 
   function format(num, length) {
@@ -151,7 +118,8 @@ function create_window() {
       servers.push(proxy(p.outHost, p.inPort, p.outPort));
     }
 
-    setEtcHost(hosts);
+    setEtcHosts(hosts);
+    updatedEtcHosts = true;
     return {
       stop: () => {
         for (const s of servers) {
