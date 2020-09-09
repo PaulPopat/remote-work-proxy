@@ -4,7 +4,7 @@
   "dependencies": {
     "@mh-cbon/sudo-fs": "^1.0.17",
     "@types/react": "^16.8.19",
-    "http-proxy": "^1.17.0"
+    "http-proxy": "^1.18.1"
   },
   "main": "main.js",
   "scripts": {
